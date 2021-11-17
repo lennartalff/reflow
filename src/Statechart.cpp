@@ -2,8 +2,9 @@
 
 
 #include "../src/sc_types.h"
-
+#include "Arduino.h"
 #include "Statechart.h"
+#include "Statechart_required.h"
 
 /*! \file Implementation of the state machine 'Statechart'
 */
@@ -17,15 +18,18 @@ static void enact_main_region_Operating_r1_Idle(Statechart* handle);
 static void enact_main_region_Operating_r1_HeatRamp(Statechart* handle);
 static void enact_main_region_Operating_r1_Abort(Statechart* handle);
 static void enact_main_region_Operating_r1_Cooling(Statechart* handle);
+static void exact_main_region_Operating_r1_HeatRamp(Statechart* handle);
 static void enseq_main_region_Operating_r1_Idle_default(Statechart* handle);
 static void enseq_main_region_Operating_r1_HeatRamp_default(Statechart* handle);
 static void enseq_main_region_Operating_r1_Abort_default(Statechart* handle);
 static void enseq_main_region_Operating_r1_Cooling_default(Statechart* handle);
+static void enseq_main_region_Operating_r1_Fail_default(Statechart* handle);
 static void enseq_main_region_default(Statechart* handle);
 static void exseq_main_region_Operating_r1_Idle(Statechart* handle);
 static void exseq_main_region_Operating_r1_HeatRamp(Statechart* handle);
 static void exseq_main_region_Operating_r1_Abort(Statechart* handle);
 static void exseq_main_region_Operating_r1_Cooling(Statechart* handle);
+static void exseq_main_region_Operating_r1_Fail(Statechart* handle);
 static void exseq_main_region(Statechart* handle);
 static void react_main_region__entry_Default(Statechart* handle);
 
@@ -46,6 +50,9 @@ static sc_integer main_region_Operating_r1_Abort_react(Statechart* handle, const
 
 /*! The reactions of state Cooling. */
 static sc_integer main_region_Operating_r1_Cooling_react(Statechart* handle, const sc_integer transitioned_before);
+
+/*! The reactions of state Fail. */
+static sc_integer main_region_Operating_r1_Fail_react(Statechart* handle, const sc_integer transitioned_before);
 
 
 static void swap_in_events(Statechart* handle);
@@ -74,12 +81,17 @@ void statechart_init(Statechart* handle)
 	
 	/* Default init sequence for statechart Statechart */
 	handle->iface.temperature = 0.0;
+	handle->ifaceLearn.current_state_time = 0;
+	handle->ifaceLearn.total_time = 0;
 	
 	handle->isExecuting = bool_false;
 }
 
 void statechart_run_cycle(Statechart* handle)
 {
+	// Serial.print("Run Cycle: ");
+	// Serial.println((int)&(handle->timeEvents.statechart_main_region_Operating_r1_HeatRamp_tev0_raised), DEC);
+	// Serial.println((int)&(handle->timeEvents), DEC);
 	/* Performs a 'run to completion' step. */
 	if (handle->isExecuting == bool_true)
 	{ 
@@ -140,6 +152,20 @@ sc_boolean statechart_is_final(const Statechart* handle)
 	return bool_false;
 }
 
+void statechart_raise_time_event(Statechart* handle, sc_eventid evid)
+{
+	Serial.print("Time event raised: ");
+	Serial.println((sc_intptr_t)evid, DEC);
+	Serial.println((int)&(handle->timeEvents), DEC);
+	Serial.println(((sc_intptr_t)&(handle->timeEvents)) + (unsigned)sizeof(StatechartTimeEvents), DEC);
+	if ( ((sc_intptr_t)evid) >= ((sc_intptr_t)&(handle->timeEvents))
+		&&  ((sc_intptr_t)evid) < ((sc_intptr_t)&(handle->timeEvents)) + (unsigned)sizeof(StatechartTimeEvents))
+		{
+		Serial.println("Valid evid");
+		*(sc_boolean*)evid = bool_true;
+	}
+}
+
 sc_boolean statechart_is_state_active(const Statechart* handle, StatechartStates state)
 {
 	sc_boolean result = bool_false;
@@ -147,7 +173,7 @@ sc_boolean statechart_is_state_active(const Statechart* handle, StatechartStates
 	{
 		case Statechart_main_region_Operating :
 			result = (sc_boolean) (handle->stateConfVector[SCVI_STATECHART_MAIN_REGION_OPERATING] >= Statechart_main_region_Operating
-				&& handle->stateConfVector[SCVI_STATECHART_MAIN_REGION_OPERATING] <= Statechart_main_region_Operating_r1_Cooling);
+				&& handle->stateConfVector[SCVI_STATECHART_MAIN_REGION_OPERATING] <= Statechart_main_region_Operating_r1_Fail);
 			break;
 		case Statechart_main_region_Operating_r1_Idle :
 			result = (sc_boolean) (handle->stateConfVector[SCVI_STATECHART_MAIN_REGION_OPERATING_R1_IDLE] == Statechart_main_region_Operating_r1_Idle
@@ -165,6 +191,10 @@ sc_boolean statechart_is_state_active(const Statechart* handle, StatechartStates
 			result = (sc_boolean) (handle->stateConfVector[SCVI_STATECHART_MAIN_REGION_OPERATING_R1_COOLING] == Statechart_main_region_Operating_r1_Cooling
 			);
 			break;
+		case Statechart_main_region_Operating_r1_Fail :
+			result = (sc_boolean) (handle->stateConfVector[SCVI_STATECHART_MAIN_REGION_OPERATING_R1_FAIL] == Statechart_main_region_Operating_r1_Fail
+			);
+			break;
 		default:
 			result = bool_false;
 			break;
@@ -178,12 +208,18 @@ static void swap_in_events(Statechart* handle)
 	handle->ifaceLearn.startPressed_raised = bool_false;
 	handle->current.ifaceLearn.stopPressed_raised = handle->ifaceLearn.stopPressed_raised;
 	handle->ifaceLearn.stopPressed_raised = bool_false;
+	handle->current.ifaceLearn.okPressed_raised = handle->ifaceLearn.okPressed_raised;
+	handle->ifaceLearn.okPressed_raised = bool_false;
+	handle->current.timeEvents.Statechart_main_region_Operating_r1_HeatRamp_time_event_0_raised = handle->timeEvents.statechart_main_region_Operating_r1_HeatRamp_tev0_raised;
+	handle->timeEvents.statechart_main_region_Operating_r1_HeatRamp_tev0_raised = bool_false;
 }
 
 static void clear_in_events(Statechart* handle)
 {
 	handle->ifaceLearn.startPressed_raised = bool_false;
 	handle->ifaceLearn.stopPressed_raised = bool_false;
+	handle->ifaceLearn.okPressed_raised = bool_false;
+	handle->timeEvents.statechart_main_region_Operating_r1_HeatRamp_tev0_raised = bool_false;
 }
 
 static void micro_step(Statechart* handle)
@@ -208,6 +244,11 @@ static void micro_step(Statechart* handle)
 		case Statechart_main_region_Operating_r1_Cooling :
 		{
 			main_region_Operating_r1_Cooling_react(handle, -1);
+			break;
+		}
+		case Statechart_main_region_Operating_r1_Fail :
+		{
+			main_region_Operating_r1_Fail_react(handle, -1);
 			break;
 		}
 		default: break;
@@ -235,8 +276,29 @@ void statechart_learn_raise_stopPressed(Statechart* handle)
 	handle->ifaceLearn.stopPressed_raised = bool_true;
 }
 
+void statechart_learn_raise_okPressed(Statechart* handle)
+{
+	handle->ifaceLearn.okPressed_raised = bool_true;
+}
 
 
+
+uint16_t statechart_learn_get_current_state_time(const Statechart* handle)
+{
+	return handle->ifaceLearn.current_state_time;
+}
+void statechart_learn_set_current_state_time(Statechart* handle, uint16_t value)
+{
+	handle->ifaceLearn.current_state_time = value;
+}
+uint16_t statechart_learn_get_total_time(const Statechart* handle)
+{
+	return handle->ifaceLearn.total_time;
+}
+void statechart_learn_set_total_time(Statechart* handle, uint16_t value)
+{
+	handle->ifaceLearn.total_time = value;
+}
 
 /* implementations of all internal functions */
 
@@ -252,9 +314,12 @@ static void enact_main_region_Operating_r1_Idle(Statechart* handle)
 /* Entry action for state 'HeatRamp'. */
 static void enact_main_region_Operating_r1_HeatRamp(Statechart* handle)
 {
-	SC_UNUSED(handle);
 	/* Entry action for state 'HeatRamp'. */
+	Serial.println((int)&(handle->timeEvents.statechart_main_region_Operating_r1_HeatRamp_tev0_raised));
+	statechart_set_timer(handle, (sc_eventid) &(handle->timeEvents.statechart_main_region_Operating_r1_HeatRamp_tev0_raised) , 1000, bool_true);
 	learn_setStateText((sc_string) "HeatRamp");
+	handle->ifaceLearn.current_state_time = 0;
+	handle->ifaceLearn.total_time = 0;
 }
 
 /* Entry action for state 'Abort'. */
@@ -273,6 +338,13 @@ static void enact_main_region_Operating_r1_Cooling(Statechart* handle)
 	/* Entry action for state 'Cooling'. */
 	learn_setStateText((sc_string) "cooling");
 	actuators_switchHeating(bool_false);
+}
+
+/* Exit action for state 'HeatRamp'. */
+static void exact_main_region_Operating_r1_HeatRamp(Statechart* handle)
+{
+	/* Exit action for state 'HeatRamp'. */
+	statechart_unset_timer(handle, (sc_eventid) &(handle->timeEvents.statechart_main_region_Operating_r1_HeatRamp_tev0_raised) );		
 }
 
 /* 'default' enter sequence for state Idle */
@@ -307,6 +379,13 @@ static void enseq_main_region_Operating_r1_Cooling_default(Statechart* handle)
 	handle->stateConfVector[0] = Statechart_main_region_Operating_r1_Cooling;
 }
 
+/* 'default' enter sequence for state Fail */
+static void enseq_main_region_Operating_r1_Fail_default(Statechart* handle)
+{
+	/* 'default' enter sequence for state Fail */
+	handle->stateConfVector[0] = Statechart_main_region_Operating_r1_Fail;
+}
+
 /* 'default' enter sequence for region main region */
 static void enseq_main_region_default(Statechart* handle)
 {
@@ -326,6 +405,7 @@ static void exseq_main_region_Operating_r1_HeatRamp(Statechart* handle)
 {
 	/* Default exit sequence for state HeatRamp */
 	handle->stateConfVector[0] = Statechart_last_state;
+	exact_main_region_Operating_r1_HeatRamp(handle);
 }
 
 /* Default exit sequence for state Abort */
@@ -339,6 +419,13 @@ static void exseq_main_region_Operating_r1_Abort(Statechart* handle)
 static void exseq_main_region_Operating_r1_Cooling(Statechart* handle)
 {
 	/* Default exit sequence for state Cooling */
+	handle->stateConfVector[0] = Statechart_last_state;
+}
+
+/* Default exit sequence for state Fail */
+static void exseq_main_region_Operating_r1_Fail(Statechart* handle)
+{
+	/* Default exit sequence for state Fail */
 	handle->stateConfVector[0] = Statechart_last_state;
 }
 
@@ -367,6 +454,11 @@ static void exseq_main_region(Statechart* handle)
 		case Statechart_main_region_Operating_r1_Cooling :
 		{
 			exseq_main_region_Operating_r1_Cooling(handle);
+			break;
+		}
+		case Statechart_main_region_Operating_r1_Fail :
+		{
+			exseq_main_region_Operating_r1_Fail(handle);
 			break;
 		}
 		default: break;
@@ -407,13 +499,22 @@ static sc_integer main_region_Operating_r1_Idle_react(Statechart* handle, const 
  			sc_integer transitioned_after = transitioned_before;
 	if ((transitioned_after) < (0))
 	{ 
-		if (((handle->current.ifaceLearn.startPressed_raised) == bool_true) && (((handle->iface.temperature) < (50.0)) == bool_true))
+		if (((handle->current.ifaceLearn.startPressed_raised) == bool_true) && (((handle->iface.temperature) < (LEARN_COOLED_DOWN_TEMP)) == bool_true))
 		{ 
 			exseq_main_region_Operating_r1_Idle(handle);
 			enseq_main_region_Operating_r1_HeatRamp_default(handle);
 			main_region_Operating_react(handle, 0);
 			transitioned_after = 0;
-		} 
+		}  else
+		{
+			if ((handle->iface.temperature) > (LEARN_COOLED_DOWN_TEMP))
+			{ 
+				exseq_main_region_Operating_r1_Idle(handle);
+				enseq_main_region_Operating_r1_Cooling_default(handle);
+				main_region_Operating_react(handle, 0);
+				transitioned_after = 0;
+			} 
+		}
 	} /* If no transition was taken then execute local reactions */
 	if ((transitioned_after) == (transitioned_before))
 	{ 
@@ -433,10 +534,26 @@ static sc_integer main_region_Operating_r1_HeatRamp_react(Statechart* handle, co
 			enseq_main_region_Operating_r1_Abort_default(handle);
 			main_region_Operating_react(handle, 0);
 			transitioned_after = 0;
-		} 
+		}  else
+		{
+			if ((handle->ifaceLearn.current_state_time) >= (LEARN_RAMP_TIME_SECS))
+			{ 
+				exseq_main_region_Operating_r1_HeatRamp(handle);
+				enseq_main_region_Operating_r1_Fail_default(handle);
+				main_region_Operating_react(handle, 0);
+				transitioned_after = 0;
+			} 
+		}
 	} /* If no transition was taken then execute local reactions */
 	if ((transitioned_after) == (transitioned_before))
 	{ 
+		if (handle->current.timeEvents.Statechart_main_region_Operating_r1_HeatRamp_time_event_0_raised == bool_true)
+		{ 
+			Serial.println("Handling Time Event in Ramp");
+			handle->ifaceLearn.current_state_time++;
+			handle->ifaceLearn.total_time++;
+			learn_setProgress(((handle->ifaceLearn.current_state_time * 100) / LEARN_RAMP_TIME_SECS));
+		} 
 		transitioned_after = main_region_Operating_react(handle, transitioned_before);
 	} return transitioned_after;
 }
@@ -464,10 +581,30 @@ static sc_integer main_region_Operating_r1_Cooling_react(Statechart* handle, con
  			sc_integer transitioned_after = transitioned_before;
 	if ((transitioned_after) < (0))
 	{ 
-		if ((handle->iface.temperature) < (50.0))
+		if ((handle->iface.temperature) < (LEARN_COOLED_DOWN_TEMP))
 		{ 
 			exseq_main_region_Operating_r1_Cooling(handle);
 			enseq_main_region_Operating_r1_Idle_default(handle);
+			main_region_Operating_react(handle, 0);
+			transitioned_after = 0;
+		} 
+	} /* If no transition was taken then execute local reactions */
+	if ((transitioned_after) == (transitioned_before))
+	{ 
+		transitioned_after = main_region_Operating_react(handle, transitioned_before);
+	} return transitioned_after;
+}
+
+static sc_integer main_region_Operating_r1_Fail_react(Statechart* handle, const sc_integer transitioned_before)
+{
+	/* The reactions of state Fail. */
+ 			sc_integer transitioned_after = transitioned_before;
+	if ((transitioned_after) < (0))
+	{ 
+		if (handle->current.ifaceLearn.okPressed_raised == bool_true)
+		{ 
+			exseq_main_region_Operating_r1_Fail(handle);
+			enseq_main_region_Operating_r1_Abort_default(handle);
 			main_region_Operating_react(handle, 0);
 			transitioned_after = 0;
 		} 

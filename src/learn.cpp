@@ -8,6 +8,7 @@
 #include "learn.h"
 #include "globals.h"
 #include "Arduino.h"
+#include "elem/XProgress.h"
 
 static gslc_tsGui *gui;
 
@@ -21,8 +22,10 @@ void learn_setStateText(const char *text)
 	Serial.println(text);
 	gslc_ElemSetTxtStr(gui, m_pElemState, text);
 }
-void learn_setProgress(int16_t progress) {}
-void learn_setProgressBounds(int16_t min, int16_t max) {}
+void learn_setProgress(int16_t progress_percent){
+	Serial.println("Progress");
+	gslc_ElemXProgressSetVal(gui, m_pElemProgress1, progress_percent);
+}
 void learn_setTempCurrentText(int32_t temperature) {}
 void learn_setTempTargetText(int32_t temperature) {}
 void learn_setDTempCurrentText(float dT) {}

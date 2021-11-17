@@ -22,7 +22,6 @@ const uint16_t LEARN_COOLED_DOWN_TEMP = 50;
 void learn_init(gslc_tsGui * m_gui);
 void learn_setStateText(const char * text);
 void learn_setProgress(int16_t progress);
-void learn_setProgressBounds(int16_t min, int16_t max);
 void learn_setTempCurrentText(int32_t temperature);
 void learn_setTempTargetText(int32_t temperature);
 void learn_setDTempCurrentText(float dT);
