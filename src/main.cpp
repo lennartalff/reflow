@@ -8,7 +8,7 @@ const int clPin = 22;
 
 MAX31855 tc(clPin, csPin, doPin);
 
-struct Statechart fsm;
+Statechart fsm;
 
 gslc_tsElemRef *m_pElemDTempCurrent = NULL;
 gslc_tsElemRef *m_pElemDTempTarget = NULL;
@@ -123,7 +123,7 @@ void setup()
   // Create graphic elements
   // ------------------------------------------------
   InitGUIslice_gen();
-  learn_init(&m_gui);
+  learn_init(&m_gui, &fsm);
   statechart_init(&fsm);
   statechart_enter(&fsm);
   Serial.println("Update GUI");

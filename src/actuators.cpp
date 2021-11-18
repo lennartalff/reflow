@@ -1,4 +1,7 @@
 #include "actuators.h"
 void actuators_switchHeating(bool on){
+    // TODO
 }
-void actuators_setHeatingDuty(uint8_t duty){}
+void actuators_set_heating_duty(uint8_t duty){
+    // TODO
+}

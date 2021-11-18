@@ -11,6 +11,6 @@
 #include <stdint.h>
 
 void actuators_switchHeating(bool on);
-void actuators_setHeatingDuty(uint8_t duty);
+void actuators_set_heating_duty(uint8_t duty);
 
 #endif /* INCLUDE_ACTUATORS_H_ */
