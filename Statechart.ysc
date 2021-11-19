@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:notation="http://www.eclipse.org/gmf/runtime/1.0.2/notation" xmlns:sgraph="http://www.yakindu.org/sct/sgraph/2.0.0">
-  <sgraph:Statechart xmi:id="_q7AlsEZiEeyQ49YjM9M30w" specification="// Use the event driven execution model.&#xA;// Switch to cycle based behavior&#xA;// by specifying '@CycleBased(200)'.&#xA;@CycleBased(10)&#xA;&#xA;&#xA;import: &quot;learn.h&quot;&#xA;import: &quot;actuators.h&quot;&#xA;&#xA;interface:&#xA;  var temperature: float&#xA;  in event okPressed&#xA;  in event cancelPressed&#xA;  in event yesPressed&#xA;  in event noPressed&#xA;&#xA;interface learn:&#xA;&#x9;// Define events and variables here. &#xA;&#x9;// Use CTRL + Space for content assist.&#xA;&#x9;in event startPressed&#xA;&#x9;in event stopPressed&#xA;&#x9;in event cancelPressed&#xA;&#x9;in event phaseCompleted&#xA;&#x9;in event failure&#xA;&#x9;var current_state_time: uint16_t&#xA;&#x9;var total_time: uint16_t&#xA;&#x9;var duty_cycle: uint8_t&#xA;&#x9;" name="Statechart" domainID="com.yakindu.domain.c">
+  <sgraph:Statechart xmi:id="_q7AlsEZiEeyQ49YjM9M30w" specification="// Use the event driven execution model.&#xA;// Switch to cycle based behavior&#xA;// by specifying '@CycleBased(200)'.&#xA;@CycleBased(10)&#xA;&#xA;&#xA;import: &quot;learn.h&quot;&#xA;import: &quot;actuators.h&quot;&#xA;&#xA;interface:&#xA;  var temperature: float&#xA;  in event okPressed&#xA;  in event cancelPressed&#xA;  in event yesPressed&#xA;  in event noPressed&#xA;&#xA;interface learn:&#xA;&#x9;// Define events and variables here. &#xA;&#x9;// Use CTRL + Space for content assist.&#xA;&#x9;in event startPressed&#xA;&#x9;in event stopPressed&#xA;&#x9;in event cancelPressed&#xA;&#x9;in event phaseCompleted&#xA;&#x9;in event failure&#xA;&#x9;var current_state_time: uint16_t&#xA;&#x9;var total_time: uint16_t&#xA;&#x9;var duty_cycle: uint8_t&#xA;&#x9;var t_overtemp: uint16_t&#xA;&#x9;" name="Statechart" domainID="com.yakindu.domain.c">
     <regions xmi:id="_q7Ca60ZiEeyQ49YjM9M30w" name="main region">
       <vertices xsi:type="sgraph:Entry" xmi:id="_q7Ca7EZiEeyQ49YjM9M30w">
         <outgoingTransitions xmi:id="_1vkpkEZkEeyQ49YjM9M30w" specification="" target="_I2RDEEZkEeyQ49YjM9M30w"/>
@@ -11,7 +11,7 @@
             <outgoingTransitions xmi:id="_4nw-sEZkEeyQ49YjM9M30w" specification="learn.startPressed [temperature &lt; LEARN_COOLED_DOWN_TEMP]" target="_KIITkEZkEeyQ49YjM9M30w"/>
             <outgoingTransitions xmi:id="_j9U4gEZ7EeyQ49YjM9M30w" specification="[temperature > LEARN_COOLED_DOWN_TEMP]" target="_NZU-kEZkEeyQ49YjM9M30w"/>
           </vertices>
-          <vertices xsi:type="sgraph:State" xmi:id="_KIITkEZkEeyQ49YjM9M30w" specification="entry /&#xA;learn_setStateText(&quot;HeatRamp&quot;);&#xA;learn.current_state_time = 0;&#xA;learn.total_time = 0;&#xA;learn_setDutyCycle(LEARN_RAMP_INITIAL_DUTY_CYCLE):&#xA;learn_updateTargetTemperature(LEARN_SOAKING_TEMP)&#xA;every 1000ms /&#xA;learn.current_state_time++;&#xA;learn.total_time++;&#xA;learn_setProgress(learn.current_state_time*100/LEARN_RAMP_TIME_SECS);&#xA;learn_updateHeatRampDuty()" name="HeatRamp" incomingTransitions="_4nw-sEZkEeyQ49YjM9M30w">
+          <vertices xsi:type="sgraph:State" xmi:id="_KIITkEZkEeyQ49YjM9M30w" specification="entry /&#xA;learn_setStateText(&quot;HeatRamp&quot;);&#xA;learn.current_state_time = 0;&#xA;learn.total_time = 0;&#xA;learn_setDutyCycle(LEARN_RAMP_INITIAL_DUTY_CYCLE);&#xA;learn_guiUpdateTargetTemperature(LEARN_SOAKING_TEMP)&#xA;every 1000ms /&#xA;learn.current_state_time++;&#xA;learn.total_time++;&#xA;learn_setProgress(learn.current_state_time*100/LEARN_RAMP_TIME_SECS);&#xA;learn_updateHeatRampDuty()" name="HeatRamp" incomingTransitions="_4nw-sEZkEeyQ49YjM9M30w">
             <outgoingTransitions xmi:id="_uu0KUEZpEeyQ49YjM9M30w" specification="learn.stopPressed" target="_Mk_XkEZkEeyQ49YjM9M30w"/>
             <outgoingTransitions xmi:id="_F25d8EcfEeyFyuqAPRVv8w" specification="[learn.current_state_time >= LEARN_RAMP_TIME_SECS] / &#xA;learn_setFailText(&quot;Failed to reach target temperature in time!\nStop heating.&quot;) " target="_BIB7EEcfEeyFyuqAPRVv8w"/>
             <outgoingTransitions xmi:id="_xqZiYEhxEeyUs4PNB3V5Ow" specification="learn.phaseCompleted" target="_qiGC8EhxEeyUs4PNB3V5Ow"/>
@@ -25,7 +25,7 @@
           <vertices xsi:type="sgraph:State" xmi:id="_BIB7EEcfEeyFyuqAPRVv8w" specification="entry /&#xA;learn_setDutyCycle(0);&#xA;learn_showFailPage()" name="Fail" incomingTransitions="_F25d8EcfEeyFyuqAPRVv8w">
             <outgoingTransitions xmi:id="_lPvJEEcfEeyFyuqAPRVv8w" specification="okPressed" target="_Mk_XkEZkEeyQ49YjM9M30w"/>
           </vertices>
-          <vertices xsi:type="sgraph:State" xmi:id="_qiGC8EhxEeyUs4PNB3V5Ow" name="HeatConst" incomingTransitions="_xqZiYEhxEeyUs4PNB3V5Ow"/>
+          <vertices xsi:type="sgraph:State" xmi:id="_qiGC8EhxEeyUs4PNB3V5Ow" specification="entry /&#xA;learn_setStateText(&quot;HeatConst&quot;);&#xA;learn.current_state_time = 0;&#xA;learn.t_overtemp = 0;&#xA;learn_guiUpdateTargetTemperature(LEARN_SOAKING_TEMP)&#xA;&#xA;every 1000ms /&#xA;learn.current_state_time++;&#xA;learn.total_time++;&#xA;learn_setProgress(learn.current_state_time*100/LEARN_CONST_TIME_SECS);&#xA;learn_updateHeatConstDuty()" name="HeatConst" incomingTransitions="_xqZiYEhxEeyUs4PNB3V5Ow"/>
         </regions>
         <regions xmi:id="_HetaQEZkEeyQ49YjM9M30w" name="r2"/>
       </vertices>
@@ -162,7 +162,7 @@
                   <styles xsi:type="notation:ShapeStyle" xmi:id="_qiJGQUhxEeyUs4PNB3V5Ow" fontName="Verdana" fillColor="15720400" lineColor="12632256"/>
                   <styles xsi:type="notation:FontStyle" xmi:id="_qiJGQkhxEeyUs4PNB3V5Ow"/>
                   <styles xsi:type="notation:BooleanValueStyle" xmi:id="_qiKUY0hxEeyUs4PNB3V5Ow" name="isHorizontal" booleanValue="true"/>
-                  <layoutConstraint xsi:type="notation:Bounds" xmi:id="_qiJGQ0hxEeyUs4PNB3V5Ow" x="1795" y="117" width="189" height="73"/>
+                  <layoutConstraint xsi:type="notation:Bounds" xmi:id="_qiJGQ0hxEeyUs4PNB3V5Ow" x="1795" y="117" width="452" height="355"/>
                 </children>
                 <layoutConstraint xsi:type="notation:Bounds" xmi:id="_HexrtEZkEeyQ49YjM9M30w"/>
               </children>
@@ -184,12 +184,12 @@
           <styles xsi:type="notation:ShapeStyle" xmi:id="_HeuBUUZkEeyQ49YjM9M30w" fontName="Verdana" fillColor="15720400" lineColor="12632256"/>
           <styles xsi:type="notation:FontStyle" xmi:id="_HeuBUkZkEeyQ49YjM9M30w"/>
           <styles xsi:type="notation:BooleanValueStyle" xmi:id="_HevPdEZkEeyQ49YjM9M30w" name="isHorizontal" booleanValue="true"/>
-          <layoutConstraint xsi:type="notation:Bounds" xmi:id="_HeuBU0ZkEeyQ49YjM9M30w" y="85" width="2144" height="1092"/>
+          <layoutConstraint xsi:type="notation:Bounds" xmi:id="_HeuBU0ZkEeyQ49YjM9M30w" y="85" width="2332" height="1092"/>
         </children>
         <layoutConstraint xsi:type="notation:Bounds" xmi:id="_q7DpNEZiEeyQ49YjM9M30w"/>
       </children>
       <styles xsi:type="notation:ShapeStyle" xmi:id="_q7DpNUZiEeyQ49YjM9M30w" fontName="Verdana" fillColor="16448250" lineColor="12632256"/>
-      <layoutConstraint xsi:type="notation:Bounds" xmi:id="_q7DpNkZiEeyQ49YjM9M30w" x="205" y="10" width="2186" height="1259"/>
+      <layoutConstraint xsi:type="notation:Bounds" xmi:id="_q7DpNkZiEeyQ49YjM9M30w" x="205" y="10" width="2374" height="1259"/>
     </children>
     <children xsi:type="notation:Shape" xmi:id="_q7DpN0ZiEeyQ49YjM9M30w" type="StatechartText" fontName="Verdana" lineColor="4210752">
       <children xsi:type="notation:DecorationNode" xmi:id="_q7DpOEZiEeyQ49YjM9M30w" type="StatechartName">
@@ -293,7 +293,7 @@
       </children>
       <styles xsi:type="notation:ConnectorStyle" xmi:id="_xqclsEhxEeyUs4PNB3V5Ow" routing="Rectilinear" lineColor="4210752"/>
       <styles xsi:type="notation:FontStyle" xmi:id="_xqdMwEhxEeyUs4PNB3V5Ow" fontName="Verdana"/>
-      <bendpoints xsi:type="notation:RelativeBendpoints" xmi:id="_xqclsUhxEeyUs4PNB3V5Ow" points="[44, -11, -297, -52]$[160, -11, -181, -52]$[160, 37, -181, -4]$[316, 37, -25, -4]"/>
+      <bendpoints xsi:type="notation:RelativeBendpoints" xmi:id="_xqclsUhxEeyUs4PNB3V5Ow" points="[44, -11, -331, -214]$[160, -11, -215, -214]$[160, 37, -215, -166]$[316, 37, -59, -166]"/>
       <sourceAnchor xsi:type="notation:IdentityAnchor" xmi:id="_xqiFQEhxEeyUs4PNB3V5Ow" id="(0.9267461669505963,0.42011834319526625)"/>
       <targetAnchor xsi:type="notation:IdentityAnchor" xmi:id="_xqiFQUhxEeyUs4PNB3V5Ow" id="(0.13227513227513227,0.5753424657534246)"/>
     </edges>

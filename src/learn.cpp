@@ -49,7 +49,7 @@ void learn_setDutyCycle(uint8_t duty_cycle)
 
 void learn_updateHeatRampDuty()
 {
-	uint32_t temp = statechart_get_temperature(fsm);
+	int32_t temp = (int32_t)statechart_get_temperature(fsm);
 	uint8_t duty_cycle = LEARN_RAMP_INITIAL_DUTY_CYCLE;
 	int32_t temp_diff = temp > LEARN_SOAKING_TEMP ? 0 : LEARN_SOAKING_TEMP - temp;
 	if (temp_diff <= LEARN_RAMP_REDUCTION_TEMP_DIFF)
@@ -62,6 +62,20 @@ void learn_updateHeatRampDuty()
 		statechart_learn_raise_phaseCompleted(fsm);
 	}
 	learn_setDutyCycle(duty_cycle);
+}
+
+void learn_updateHeatConstDuty() {
+	int32_t temp = (int32_t)statechart_get_temperature(fsm);
+	uint16_t t_overtemp = statechart_learn_get_t_overtemp(fsm);
+	uint16_t t_now = statechart_learn_get_current_state_time(fsm);
+	if(temp > LEARN_SOAKING_TEMP) {
+		actuators_switchHeating(false);
+		// update duty cycle only after a certain guard time
+		if(t_now - t_overtemp > LEARN_CONST_DUTY_GUARD_TIME_SECS) {
+			statechart_learn_set_t_overtemp(fsm, t_now);
+			// TODO: complete the code
+		}
+	}
 }
 
 void learn_guiUpdateTargetTemperature(int32_t temperature)
