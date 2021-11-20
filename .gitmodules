@@ -1,0 +1,6 @@
+[submodule "lib/lvgl"]
+	path = lib/lvgl
+	url = https://github.com/lvgl/lvgl.git
+[submodule "lib/ILI9341_t3n"]
+	path = lib/ILI9341_t3n
+	url = git@github.com:lennartalff/ILI9341_t3n.git
