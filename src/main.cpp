@@ -1,6 +1,7 @@
 #include "MAX31855.h"
 // #include "Statechart.h"
 #include "gui.h"
+#include "lvgl.h"
 
 
 
@@ -60,7 +61,7 @@ void loop()
     float internal = tc.getInternal();
 
     float temp = tc.getTemperature();
-    Serial.println(int(temp), DEC);
+    // Serial.println(int(temp), DEC);
     // snprintf(txt, MAX_STR, "%3d", int(temp));
     // gslc_ElemSetTxtStr(&m_gui, m_pElemLearnTempCurrent, txt);
     // statechart_run_cycle(&fsm);
