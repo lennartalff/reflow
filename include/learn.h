@@ -8,7 +8,7 @@
 #ifndef LEARN
 #define LEARN
 #include <stdint.h>
-#include "globals.h"
+
 #include "Statechart.h"
 
 const uint16_t LEARN_RAMP_TIME_SECS = 200;
@@ -27,15 +27,17 @@ const int32_t LEARN_RAMP_COMPLETED_TEMP_DIFF = 15;
 
 const uint16_t LEARN_CONST_DUTY_GUARD_TIME_SECS = 30;
 
-void learn_init(gslc_tsGui *m_gui, Statechart *fsm_handle);
-void learn_setStateText(const char *text);
-void learn_setProgress(int16_t progress);
+void learn_init(Statechart *fsm_handle);
+void learn_setProgress(int8_t progress);
 void learn_setFailText(const char *text);
 void learn_showFailPage();
 void learn_setDutyCycle(uint8_t dutyCycle);
 void learn_updateHeatRampDuty();
 void learn_updateHeatConstDuty();
-void learn_guiUpdateTargetTemperature(int32_t temperature);
-void learn_guiUpdateCurrentTemperature(int32_t temperature);
+void learn_guiSetStateText(const char *text);
+void learn_guiUpdateCurrentTemperature(int16_t temperature);
+void learn_guiUpdateDutyCycle(uint8_t duty_cycle);
+void learn_guiSetInfoText(const char *text);
+void learn_guiSetTime(uint16_t time);
 
 #endif /* LEARN */

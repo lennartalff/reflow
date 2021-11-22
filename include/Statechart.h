@@ -33,6 +33,7 @@ typedef struct StatechartTimeEvents StatechartTimeEvents;
 
 #include <learn.h>
 #include <actuators.h>
+#include <sensors.h>
 #include "../src/sc_types.h"
 
 #ifdef __cplusplus
@@ -43,12 +44,12 @@ extern "C" {
 */
 
 /*! Define number of states in the state enum */
-#define STATECHART_STATE_COUNT 6
+#define STATECHART_STATE_COUNT 8
 
 /*! Define dimension of the state configuration vector for orthogonal states. */
-#define STATECHART_MAX_ORTHOGONAL_STATES 1
+#define STATECHART_MAX_ORTHOGONAL_STATES 2
 /*! Define maximum number of time events that can be active at once */
-#define STATECHART_MAX_PARALLEL_TIME_EVENTS 1
+#define STATECHART_MAX_PARALLEL_TIME_EVENTS 2
 
 /*! Define indices of states in the StateConfVector */
 #define SCVI_STATECHART_MAIN_REGION_OPERATING 0
@@ -57,6 +58,8 @@ extern "C" {
 #define SCVI_STATECHART_MAIN_REGION_OPERATING_R1_ABORT 0
 #define SCVI_STATECHART_MAIN_REGION_OPERATING_R1_COOLING 0
 #define SCVI_STATECHART_MAIN_REGION_OPERATING_R1_FAIL 0
+#define SCVI_STATECHART_MAIN_REGION_OPERATING_R1_HEATCONST 0
+#define SCVI_STATECHART_MAIN_REGION_OPERATING_R2_READTEMPERATURE 1
 
 /*! Enumeration of all states */ 
 typedef enum
@@ -67,8 +70,12 @@ typedef enum
 	Statechart_main_region_Operating_r1_HeatRamp,
 	Statechart_main_region_Operating_r1_Abort,
 	Statechart_main_region_Operating_r1_Cooling,
-	Statechart_main_region_Operating_r1_Fail
+	Statechart_main_region_Operating_r1_Fail,
+	Statechart_main_region_Operating_r1_HeatConst,
+	Statechart_main_region_Operating_r2_ReadTemperature
 } StatechartStates;
+
+
 
 
 
@@ -79,6 +86,11 @@ typedef enum
 struct StatechartIface
 {
 	float temperature;
+	int16_t temperature_int;
+	sc_boolean okPressed_raised;
+	sc_boolean cancelPressed_raised;
+	sc_boolean yesPressed_raised;
+	sc_boolean noPressed_raised;
 };
 
 
@@ -88,9 +100,13 @@ struct StatechartIfaceLearn
 {
 	sc_boolean startPressed_raised;
 	sc_boolean stopPressed_raised;
-	sc_boolean okPressed_raised;
+	sc_boolean cancelPressed_raised;
+	sc_boolean phaseCompleted_raised;
+	sc_boolean failure_raised;
 	uint16_t current_state_time;
 	uint16_t total_time;
+	uint8_t duty_cycle;
+	uint16_t t_overtemp;
 };
 
 
@@ -99,26 +115,41 @@ struct StatechartIfaceLearn
 struct StatechartTimeEvents
 {
 	sc_boolean statechart_main_region_Operating_r1_HeatRamp_tev0_raised;
+	sc_boolean statechart_main_region_Operating_r1_HeatConst_tev0_raised;
+	sc_boolean statechart_main_region_Operating_r2_ReadTemperature_tev0_raised;
 };
 
 
 
 
+
+typedef struct StatechartIfaceEvBuf StatechartIfaceEvBuf;
+struct StatechartIfaceEvBuf {
+	sc_boolean okPressed_raised;
+	sc_boolean cancelPressed_raised;
+	sc_boolean yesPressed_raised;
+	sc_boolean noPressed_raised;
+};
 
 typedef struct StatechartIfaceLearnEvBuf StatechartIfaceLearnEvBuf;
 struct StatechartIfaceLearnEvBuf {
 	sc_boolean startPressed_raised;
 	sc_boolean stopPressed_raised;
-	sc_boolean okPressed_raised;
+	sc_boolean cancelPressed_raised;
+	sc_boolean phaseCompleted_raised;
+	sc_boolean failure_raised;
 };
 
 typedef struct StatechartTimeEventsEvBuf StatechartTimeEventsEvBuf;
 struct StatechartTimeEventsEvBuf {
 	sc_boolean Statechart_main_region_Operating_r1_HeatRamp_time_event_0_raised;
+	sc_boolean Statechart_main_region_Operating_r1_HeatConst_time_event_0_raised;
+	sc_boolean Statechart_main_region_Operating_r2_ReadTemperature_time_event_0_raised;
 };
 
 typedef struct StatechartEvBuf StatechartEvBuf;
 struct StatechartEvBuf {
+	StatechartIfaceEvBuf iface;
 	StatechartIfaceLearnEvBuf ifaceLearn;
 	StatechartTimeEventsEvBuf timeEvents;
 };
@@ -136,6 +167,7 @@ struct Statechart
 	StatechartTimeEvents timeEvents;
 	StatechartEvBuf current;
 	sc_boolean isExecuting;
+	sc_integer stateConfVectorPosition;
 };
 
 
@@ -162,12 +194,28 @@ extern void statechart_raise_time_event(Statechart* handle, sc_eventid evid);
 extern float statechart_get_temperature(const Statechart* handle);
 /*! Sets the value of the variable 'temperature' that is defined in the default interface scope. */ 
 extern void statechart_set_temperature(Statechart* handle, float value);
+/*! Gets the value of the variable 'temperature_int' that is defined in the default interface scope. */ 
+extern int16_t statechart_get_temperature_int(const Statechart* handle);
+/*! Sets the value of the variable 'temperature_int' that is defined in the default interface scope. */ 
+extern void statechart_set_temperature_int(Statechart* handle, int16_t value);
+/*! Raises the in event 'okPressed' that is defined in the default interface scope. */ 
+extern void statechart_raise_okPressed(Statechart* handle);
+/*! Raises the in event 'cancelPressed' that is defined in the default interface scope. */ 
+extern void statechart_raise_cancelPressed(Statechart* handle);
+/*! Raises the in event 'yesPressed' that is defined in the default interface scope. */ 
+extern void statechart_raise_yesPressed(Statechart* handle);
+/*! Raises the in event 'noPressed' that is defined in the default interface scope. */ 
+extern void statechart_raise_noPressed(Statechart* handle);
 /*! Raises the in event 'startPressed' that is defined in the interface scope 'learn'. */ 
 extern void statechart_learn_raise_startPressed(Statechart* handle);
 /*! Raises the in event 'stopPressed' that is defined in the interface scope 'learn'. */ 
 extern void statechart_learn_raise_stopPressed(Statechart* handle);
-/*! Raises the in event 'okPressed' that is defined in the interface scope 'learn'. */ 
-extern void statechart_learn_raise_okPressed(Statechart* handle);
+/*! Raises the in event 'cancelPressed' that is defined in the interface scope 'learn'. */ 
+extern void statechart_learn_raise_cancelPressed(Statechart* handle);
+/*! Raises the in event 'phaseCompleted' that is defined in the interface scope 'learn'. */ 
+extern void statechart_learn_raise_phaseCompleted(Statechart* handle);
+/*! Raises the in event 'failure' that is defined in the interface scope 'learn'. */ 
+extern void statechart_learn_raise_failure(Statechart* handle);
 /*! Gets the value of the variable 'current_state_time' that is defined in the interface scope 'learn'. */ 
 extern uint16_t statechart_learn_get_current_state_time(const Statechart* handle);
 /*! Sets the value of the variable 'current_state_time' that is defined in the interface scope 'learn'. */ 
@@ -176,6 +224,14 @@ extern void statechart_learn_set_current_state_time(Statechart* handle, uint16_t
 extern uint16_t statechart_learn_get_total_time(const Statechart* handle);
 /*! Sets the value of the variable 'total_time' that is defined in the interface scope 'learn'. */ 
 extern void statechart_learn_set_total_time(Statechart* handle, uint16_t value);
+/*! Gets the value of the variable 'duty_cycle' that is defined in the interface scope 'learn'. */ 
+extern uint8_t statechart_learn_get_duty_cycle(const Statechart* handle);
+/*! Sets the value of the variable 'duty_cycle' that is defined in the interface scope 'learn'. */ 
+extern void statechart_learn_set_duty_cycle(Statechart* handle, uint8_t value);
+/*! Gets the value of the variable 't_overtemp' that is defined in the interface scope 'learn'. */ 
+extern uint16_t statechart_learn_get_t_overtemp(const Statechart* handle);
+/*! Sets the value of the variable 't_overtemp' that is defined in the interface scope 'learn'. */ 
+extern void statechart_learn_set_t_overtemp(Statechart* handle, uint16_t value);
 
 /*!
  * Checks whether the state machine is active (until 2.4.1 this method was used for states).
