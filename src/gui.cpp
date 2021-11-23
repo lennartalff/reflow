@@ -91,11 +91,11 @@ void gui_learn_set_state(const char *text) {
 }
 
 void gui_learn_set_time(uint16_t time) {
-  lv_label_set_text_fmt(learn_time, "%d", time);
+  lv_label_set_text_fmt(learn_time, "%d s", time);
 }
 
 void gui_learn_set_temperature(int16_t temperature) {
-  lv_label_set_text_fmt(learn_temperature, "%d", temperature);
+  lv_label_set_text_fmt(learn_temperature, "%d °C", temperature);
 }
 
 void gui_learn_set_duty(uint8_t duty) {
@@ -226,7 +226,7 @@ static lv_obj_t *gui_create_learn_progressbox(lv_obj_t *parent) {
   lv_obj_set_height(col, LV_SIZE_CONTENT);
 
   learn_progress = lv_bar_create(col);
-  lv_obj_set_height(learn_progress, 20);
+  lv_obj_set_height(learn_progress, 10);
   lv_obj_set_width(learn_progress, LV_PCT(100));
 
   lv_obj_t *row = lv_obj_create(col);
@@ -275,7 +275,7 @@ static lv_obj_t* gui_create_label_value_row(const char *text, lv_obj_t *parent) 
 }
 
 void gui_show_ok_msg_box(const char* title, const char* text) {
-  static const char *btns[] = {"OK"};
+  static const char *btns[] = {"OK", ""};
   lv_obj_t *box = lv_msgbox_create(NULL, title, text, btns, false);
   lv_obj_add_event_cb(box, gui_on_ok_button, LV_EVENT_VALUE_CHANGED, NULL);
   lv_obj_center(box);
@@ -311,10 +311,10 @@ static void gui_on_learn_stop_button(lv_event_t *e){
 }
 
 static void gui_on_ok_button(lv_event_t *e){
-  lv_event_code_t code = lv_event_get_code(e);
   lv_obj_t *obj = lv_event_get_current_target(e);
   if (strcmp(lv_msgbox_get_active_btn_text(obj), "OK") == 0) {
     statechart_raise_okPressed(fsm);
+    lv_msgbox_close(obj);
   }
 }
 

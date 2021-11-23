@@ -25,6 +25,8 @@ const uint8_t LEARN_RAMP_REDUCTION_DUTY_CYCLE = 30;
 const uint8_t LEARN_RAMP_COMPLETED_DUTY_CYCLE = 15;
 const int32_t LEARN_RAMP_COMPLETED_TEMP_DIFF = 15;
 
+const uint8_t LEARN_INERTIA_DUTY_CYCLE = 80;
+
 const uint16_t LEARN_CONST_DUTY_GUARD_TIME_SECS = 30;
 
 void learn_init(Statechart *fsm_handle);

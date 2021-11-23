@@ -44,7 +44,7 @@ extern "C" {
 */
 
 /*! Define number of states in the state enum */
-#define STATECHART_STATE_COUNT 8
+#define STATECHART_STATE_COUNT 9
 
 /*! Define dimension of the state configuration vector for orthogonal states. */
 #define STATECHART_MAX_ORTHOGONAL_STATES 2
@@ -59,6 +59,7 @@ extern "C" {
 #define SCVI_STATECHART_MAIN_REGION_OPERATING_R1_COOLING 0
 #define SCVI_STATECHART_MAIN_REGION_OPERATING_R1_FAIL 0
 #define SCVI_STATECHART_MAIN_REGION_OPERATING_R1_HEATCONST 0
+#define SCVI_STATECHART_MAIN_REGION_OPERATING_R1_INERTIA 0
 #define SCVI_STATECHART_MAIN_REGION_OPERATING_R2_READTEMPERATURE 1
 
 /*! Enumeration of all states */ 
@@ -72,6 +73,7 @@ typedef enum
 	Statechart_main_region_Operating_r1_Cooling,
 	Statechart_main_region_Operating_r1_Fail,
 	Statechart_main_region_Operating_r1_HeatConst,
+	Statechart_main_region_Operating_r1_Inertia,
 	Statechart_main_region_Operating_r2_ReadTemperature
 } StatechartStates;
 
@@ -107,6 +109,7 @@ struct StatechartIfaceLearn
 	uint16_t total_time;
 	uint8_t duty_cycle;
 	uint16_t t_overtemp;
+	uint16_t duty_delay;
 };
 
 
@@ -116,6 +119,7 @@ struct StatechartTimeEvents
 {
 	sc_boolean statechart_main_region_Operating_r1_HeatRamp_tev0_raised;
 	sc_boolean statechart_main_region_Operating_r1_HeatConst_tev0_raised;
+	sc_boolean statechart_main_region_Operating_r1_Inertia_tev0_raised;
 	sc_boolean statechart_main_region_Operating_r2_ReadTemperature_tev0_raised;
 };
 
@@ -144,6 +148,7 @@ typedef struct StatechartTimeEventsEvBuf StatechartTimeEventsEvBuf;
 struct StatechartTimeEventsEvBuf {
 	sc_boolean Statechart_main_region_Operating_r1_HeatRamp_time_event_0_raised;
 	sc_boolean Statechart_main_region_Operating_r1_HeatConst_time_event_0_raised;
+	sc_boolean Statechart_main_region_Operating_r1_Inertia_time_event_0_raised;
 	sc_boolean Statechart_main_region_Operating_r2_ReadTemperature_time_event_0_raised;
 };
 
@@ -232,6 +237,10 @@ extern void statechart_learn_set_duty_cycle(Statechart* handle, uint8_t value);
 extern uint16_t statechart_learn_get_t_overtemp(const Statechart* handle);
 /*! Sets the value of the variable 't_overtemp' that is defined in the interface scope 'learn'. */ 
 extern void statechart_learn_set_t_overtemp(Statechart* handle, uint16_t value);
+/*! Gets the value of the variable 'duty_delay' that is defined in the interface scope 'learn'. */ 
+extern uint16_t statechart_learn_get_duty_delay(const Statechart* handle);
+/*! Sets the value of the variable 'duty_delay' that is defined in the interface scope 'learn'. */ 
+extern void statechart_learn_set_duty_delay(Statechart* handle, uint16_t value);
 
 /*!
  * Checks whether the state machine is active (until 2.4.1 this method was used for states).

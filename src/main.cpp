@@ -3,6 +3,7 @@
 #include "gui.h"
 #include "lvgl.h"
 #include "sensors.h"
+#include "actuators.h"
 
 
 
@@ -21,6 +22,7 @@ void setup()
   // ------------------------------------------------
   Serial.begin(115200);
   // Wait for USB Serial
+  actuators_init();
   sensors_init(&fsm);
   gui_init(&fsm);
 
@@ -38,23 +40,11 @@ void setup()
 void loop()
 {
   static uint32_t t_last = 0;
-
-  // ------------------------------------------------
-  // Update GUI Elements
-  // ------------------------------------------------
-
-  //TODO - Add update code for any text, gauges, or sliders
-
-  // ------------------------------------------------
-  // Periodically call GUIslice update function
-  // ------------------------------------------------
   uint32_t now = millis();
   if (now - t_last >= 5)
   {
-    // snprintf(txt, MAX_STR, "%3d", int(temp));
     lv_timer_handler();
     statechart_run_cycle(&fsm);
-    // gslc_Update(&m_gui);
     t_last = now;
   }
 }

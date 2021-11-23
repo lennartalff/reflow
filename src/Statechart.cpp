@@ -20,9 +20,11 @@ static void enact_main_region_Operating_r1_Abort(Statechart* handle);
 static void enact_main_region_Operating_r1_Cooling(Statechart* handle);
 static void enact_main_region_Operating_r1_Fail(Statechart* handle);
 static void enact_main_region_Operating_r1_HeatConst(Statechart* handle);
+static void enact_main_region_Operating_r1_Inertia(Statechart* handle);
 static void enact_main_region_Operating_r2_ReadTemperature(Statechart* handle);
 static void exact_main_region_Operating_r1_HeatRamp(Statechart* handle);
 static void exact_main_region_Operating_r1_HeatConst(Statechart* handle);
+static void exact_main_region_Operating_r1_Inertia(Statechart* handle);
 static void exact_main_region_Operating_r2_ReadTemperature(Statechart* handle);
 static void enseq_main_region_Operating_r1_Idle_default(Statechart* handle);
 static void enseq_main_region_Operating_r1_HeatRamp_default(Statechart* handle);
@@ -30,6 +32,7 @@ static void enseq_main_region_Operating_r1_Abort_default(Statechart* handle);
 static void enseq_main_region_Operating_r1_Cooling_default(Statechart* handle);
 static void enseq_main_region_Operating_r1_Fail_default(Statechart* handle);
 static void enseq_main_region_Operating_r1_HeatConst_default(Statechart* handle);
+static void enseq_main_region_Operating_r1_Inertia_default(Statechart* handle);
 static void enseq_main_region_Operating_r2_ReadTemperature_default(Statechart* handle);
 static void enseq_main_region_default(Statechart* handle);
 static void enseq_main_region_Operating_r2_default(Statechart* handle);
@@ -39,6 +42,7 @@ static void exseq_main_region_Operating_r1_Abort(Statechart* handle);
 static void exseq_main_region_Operating_r1_Cooling(Statechart* handle);
 static void exseq_main_region_Operating_r1_Fail(Statechart* handle);
 static void exseq_main_region_Operating_r1_HeatConst(Statechart* handle);
+static void exseq_main_region_Operating_r1_Inertia(Statechart* handle);
 static void exseq_main_region_Operating_r2_ReadTemperature(Statechart* handle);
 static void exseq_main_region(Statechart* handle);
 static void react_main_region__entry_Default(Statechart* handle);
@@ -67,6 +71,9 @@ static sc_integer main_region_Operating_r1_Fail_react(Statechart* handle, const 
 
 /*! The reactions of state HeatConst. */
 static sc_integer main_region_Operating_r1_HeatConst_react(Statechart* handle, const sc_integer transitioned_before);
+
+/*! The reactions of state Inertia. */
+static sc_integer main_region_Operating_r1_Inertia_react(Statechart* handle, const sc_integer transitioned_before);
 
 /*! The reactions of state ReadTemperature. */
 static sc_integer main_region_Operating_r2_ReadTemperature_react(Statechart* handle, const sc_integer transitioned_before);
@@ -103,6 +110,7 @@ void statechart_init(Statechart* handle)
 	handle->ifaceLearn.total_time = 0;
 	handle->ifaceLearn.duty_cycle = 0;
 	handle->ifaceLearn.t_overtemp = 0;
+	handle->ifaceLearn.duty_delay = 0;
 	
 	handle->isExecuting = bool_false;
 }
@@ -211,6 +219,10 @@ sc_boolean statechart_is_state_active(const Statechart* handle, StatechartStates
 			result = (sc_boolean) (handle->stateConfVector[SCVI_STATECHART_MAIN_REGION_OPERATING_R1_HEATCONST] == Statechart_main_region_Operating_r1_HeatConst
 			);
 			break;
+		case Statechart_main_region_Operating_r1_Inertia :
+			result = (sc_boolean) (handle->stateConfVector[SCVI_STATECHART_MAIN_REGION_OPERATING_R1_INERTIA] == Statechart_main_region_Operating_r1_Inertia
+			);
+			break;
 		case Statechart_main_region_Operating_r2_ReadTemperature :
 			result = (sc_boolean) (handle->stateConfVector[SCVI_STATECHART_MAIN_REGION_OPERATING_R2_READTEMPERATURE] == Statechart_main_region_Operating_r2_ReadTemperature
 			);
@@ -246,6 +258,8 @@ static void swap_in_events(Statechart* handle)
 	handle->timeEvents.statechart_main_region_Operating_r1_HeatRamp_tev0_raised = bool_false;
 	handle->current.timeEvents.Statechart_main_region_Operating_r1_HeatConst_time_event_0_raised = handle->timeEvents.statechart_main_region_Operating_r1_HeatConst_tev0_raised;
 	handle->timeEvents.statechart_main_region_Operating_r1_HeatConst_tev0_raised = bool_false;
+	handle->current.timeEvents.Statechart_main_region_Operating_r1_Inertia_time_event_0_raised = handle->timeEvents.statechart_main_region_Operating_r1_Inertia_tev0_raised;
+	handle->timeEvents.statechart_main_region_Operating_r1_Inertia_tev0_raised = bool_false;
 	handle->current.timeEvents.Statechart_main_region_Operating_r2_ReadTemperature_time_event_0_raised = handle->timeEvents.statechart_main_region_Operating_r2_ReadTemperature_tev0_raised;
 	handle->timeEvents.statechart_main_region_Operating_r2_ReadTemperature_tev0_raised = bool_false;
 }
@@ -263,6 +277,7 @@ static void clear_in_events(Statechart* handle)
 	handle->ifaceLearn.failure_raised = bool_false;
 	handle->timeEvents.statechart_main_region_Operating_r1_HeatRamp_tev0_raised = bool_false;
 	handle->timeEvents.statechart_main_region_Operating_r1_HeatConst_tev0_raised = bool_false;
+	handle->timeEvents.statechart_main_region_Operating_r1_Inertia_tev0_raised = bool_false;
 	handle->timeEvents.statechart_main_region_Operating_r2_ReadTemperature_tev0_raised = bool_false;
 }
 
@@ -300,6 +315,11 @@ static void micro_step(Statechart* handle)
 		case Statechart_main_region_Operating_r1_HeatConst :
 		{
 			transitioned = main_region_Operating_r1_HeatConst_react(handle, transitioned);
+			break;
+		}
+		case Statechart_main_region_Operating_r1_Inertia :
+		{
+			transitioned = main_region_Operating_r1_Inertia_react(handle, transitioned);
 			break;
 		}
 		default: break;
@@ -416,6 +436,14 @@ void statechart_learn_set_t_overtemp(Statechart* handle, uint16_t value)
 {
 	handle->ifaceLearn.t_overtemp = value;
 }
+uint16_t statechart_learn_get_duty_delay(const Statechart* handle)
+{
+	return handle->ifaceLearn.duty_delay;
+}
+void statechart_learn_set_duty_delay(Statechart* handle, uint16_t value)
+{
+	handle->ifaceLearn.duty_delay = value;
+}
 
 /* implementations of all internal functions */
 
@@ -427,6 +455,8 @@ static void enact_main_region_Operating_r1_Idle(Statechart* handle)
 	learn_guiSetStateText((sc_string) "idle");
 	actuators_switchHeating(bool_false);
 	learn_guiSetInfoText((sc_string) "Ready to start the learning procedure.");
+	learn_setProgress(0);
+	learn_guiSetTime(0);
 }
 
 /* Entry action for state 'HeatRamp'. */
@@ -438,7 +468,10 @@ static void enact_main_region_Operating_r1_HeatRamp(Statechart* handle)
 	learn_guiSetInfoText((sc_string) "Keep heating until reaching soak temperature.");
 	handle->ifaceLearn.current_state_time = 0;
 	handle->ifaceLearn.total_time = 0;
+	actuators_switchHeating(bool_true);
 	learn_setDutyCycle(LEARN_RAMP_INITIAL_DUTY_CYCLE);
+	learn_setProgress(((100 * handle->iface.temperature_int) / ((LEARN_SOAKING_TEMP - LEARN_RAMP_COMPLETED_TEMP_DIFF))));
+	learn_guiSetTime((LEARN_RAMP_TIME_SECS - handle->ifaceLearn.current_state_time));
 }
 
 /* Entry action for state 'Abort'. */
@@ -476,8 +509,25 @@ static void enact_main_region_Operating_r1_HeatConst(Statechart* handle)
 	/* Entry action for state 'HeatConst'. */
 	statechart_set_timer(handle, (sc_eventid) &(handle->timeEvents.statechart_main_region_Operating_r1_HeatConst_tev0_raised) , 1000, bool_true);
 	learn_guiSetStateText((sc_string) "HeatConst");
+	learn_guiSetInfoText((sc_string) "Estimating the duty cycle required to hold the soak temeprature.");
 	handle->ifaceLearn.current_state_time = 0;
 	handle->ifaceLearn.t_overtemp = 0;
+	learn_setProgress(((handle->ifaceLearn.current_state_time * 100) / LEARN_CONST_TIME_SECS));
+	learn_guiSetTime((LEARN_CONST_TIME_SECS - handle->ifaceLearn.current_state_time));
+}
+
+/* Entry action for state 'Inertia'. */
+static void enact_main_region_Operating_r1_Inertia(Statechart* handle)
+{
+	/* Entry action for state 'Inertia'. */
+	statechart_set_timer(handle, (sc_eventid) &(handle->timeEvents.statechart_main_region_Operating_r1_Inertia_tev0_raised) , 1000, bool_true);
+	learn_guiSetStateText((sc_string) "Inertia");
+	learn_guiSetInfoText((sc_string) "Measuring the time required to increase the temperature.");
+	handle->ifaceLearn.current_state_time = 0;
+	learn_setProgress(0);
+	learn_guiSetTime(LEARN_INERTIA_TIME_SECS);
+	actuators_switchHeating(bool_true);
+	learn_setDutyCycle(LEARN_INERTIA_DUTY_CYCLE);
 }
 
 /* Entry action for state 'ReadTemperature'. */
@@ -499,6 +549,13 @@ static void exact_main_region_Operating_r1_HeatConst(Statechart* handle)
 {
 	/* Exit action for state 'HeatConst'. */
 	statechart_unset_timer(handle, (sc_eventid) &(handle->timeEvents.statechart_main_region_Operating_r1_HeatConst_tev0_raised) );		
+}
+
+/* Exit action for state 'Inertia'. */
+static void exact_main_region_Operating_r1_Inertia(Statechart* handle)
+{
+	/* Exit action for state 'Inertia'. */
+	statechart_unset_timer(handle, (sc_eventid) &(handle->timeEvents.statechart_main_region_Operating_r1_Inertia_tev0_raised) );		
 }
 
 /* Exit action for state 'ReadTemperature'. */
@@ -559,6 +616,15 @@ static void enseq_main_region_Operating_r1_HeatConst_default(Statechart* handle)
 	/* 'default' enter sequence for state HeatConst */
 	enact_main_region_Operating_r1_HeatConst(handle);
 	handle->stateConfVector[0] = Statechart_main_region_Operating_r1_HeatConst;
+	handle->stateConfVectorPosition = 0;
+}
+
+/* 'default' enter sequence for state Inertia */
+static void enseq_main_region_Operating_r1_Inertia_default(Statechart* handle)
+{
+	/* 'default' enter sequence for state Inertia */
+	enact_main_region_Operating_r1_Inertia(handle);
+	handle->stateConfVector[0] = Statechart_main_region_Operating_r1_Inertia;
 	handle->stateConfVectorPosition = 0;
 }
 
@@ -635,6 +701,15 @@ static void exseq_main_region_Operating_r1_HeatConst(Statechart* handle)
 	exact_main_region_Operating_r1_HeatConst(handle);
 }
 
+/* Default exit sequence for state Inertia */
+static void exseq_main_region_Operating_r1_Inertia(Statechart* handle)
+{
+	/* Default exit sequence for state Inertia */
+	handle->stateConfVector[0] = Statechart_last_state;
+	handle->stateConfVectorPosition = 0;
+	exact_main_region_Operating_r1_Inertia(handle);
+}
+
 /* Default exit sequence for state ReadTemperature */
 static void exseq_main_region_Operating_r2_ReadTemperature(Statechart* handle)
 {
@@ -679,6 +754,11 @@ static void exseq_main_region(Statechart* handle)
 		case Statechart_main_region_Operating_r1_HeatConst :
 		{
 			exseq_main_region_Operating_r1_HeatConst(handle);
+			break;
+		}
+		case Statechart_main_region_Operating_r1_Inertia :
+		{
+			exseq_main_region_Operating_r1_Inertia(handle);
 			break;
 		}
 		default: break;
@@ -790,8 +870,8 @@ static sc_integer main_region_Operating_r1_HeatRamp_react(Statechart* handle, co
 		{ 
 			handle->ifaceLearn.current_state_time++;
 			handle->ifaceLearn.total_time++;
-			learn_setProgress(((100 * handle->iface.temperature_int) / ((LEARN_SOAKING_TEMP - LEARN_RAMP_COMPLETED_TEMP_DIFF))));
 			learn_updateHeatRampDuty();
+			learn_setProgress(((100 * handle->iface.temperature_int) / ((LEARN_SOAKING_TEMP - LEARN_RAMP_COMPLETED_TEMP_DIFF))));
 			learn_guiSetTime((LEARN_RAMP_TIME_SECS - handle->ifaceLearn.current_state_time));
 		} 
 	} return transitioned_after;
@@ -845,6 +925,12 @@ static sc_integer main_region_Operating_r1_HeatConst_react(Statechart* handle, c
  			sc_integer transitioned_after = transitioned_before;
 	if ((transitioned_after) < (0))
 	{ 
+		if ((handle->ifaceLearn.current_state_time) >= (LEARN_CONST_TIME_SECS))
+		{ 
+			exseq_main_region_Operating_r1_HeatConst(handle);
+			enseq_main_region_Operating_r1_Inertia_default(handle);
+			transitioned_after = 0;
+		} 
 	} /* If no transition was taken then execute local reactions */
 	if ((transitioned_after) == (transitioned_before))
 	{ 
@@ -852,9 +938,28 @@ static sc_integer main_region_Operating_r1_HeatConst_react(Statechart* handle, c
 		{ 
 			handle->ifaceLearn.current_state_time++;
 			handle->ifaceLearn.total_time++;
+			handle->ifaceLearn.duty_delay++;
 			learn_setProgress(((handle->ifaceLearn.current_state_time * 100) / LEARN_CONST_TIME_SECS));
 			learn_updateHeatConstDuty();
 			learn_guiSetTime((LEARN_CONST_TIME_SECS - handle->ifaceLearn.current_state_time));
+		} 
+	} return transitioned_after;
+}
+
+static sc_integer main_region_Operating_r1_Inertia_react(Statechart* handle, const sc_integer transitioned_before)
+{
+	/* The reactions of state Inertia. */
+ 			sc_integer transitioned_after = transitioned_before;
+	if ((transitioned_after) < (0))
+	{ 
+	} /* If no transition was taken then execute local reactions */
+	if ((transitioned_after) == (transitioned_before))
+	{ 
+		if (handle->current.timeEvents.Statechart_main_region_Operating_r1_Inertia_time_event_0_raised == bool_true)
+		{ 
+			handle->ifaceLearn.current_state_time++;
+			handle->ifaceLearn.total_time++;
+			learn_guiSetTime((LEARN_INERTIA_TIME_SECS - handle->ifaceLearn.current_state_time));
 		} 
 	} return transitioned_after;
 }

@@ -14,7 +14,7 @@ public:
     void unsetTimer();
     void init();
     void raiseTimeEvent();
-    Statechart *sc_handle;
+    const Statechart *sc_handle;
     bool active = false;
     sc_eventid evid;
     sc_integer time_ms;

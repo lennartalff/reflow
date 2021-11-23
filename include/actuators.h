@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+void actuators_init();
 void actuators_switchHeating(bool on);
 void actuators_set_heating_duty(uint8_t duty);
 

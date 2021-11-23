@@ -11,6 +11,7 @@
 #include "gui.h"
 
 static Statechart *fsm;
+static char msg_buf[128];
 
 void learn_init(Statechart *fsm_handle) { fsm = fsm_handle; }
 
@@ -18,12 +19,11 @@ void learn_setProgress(int8_t progress_percent) {
   gui_learn_set_progress(progress_percent);
 }
 void learn_setFailText(const char *text) {
-  // TODO
+  strncpy(msg_buf, text, sizeof(msg_buf));
+  msg_buf[sizeof(msg_buf) - 1] = '\0';
 }
 
-void learn_showFailPage() {
-  // TODO
-}
+void learn_showFailPage() { gui_show_ok_msg_box("Failure", msg_buf); }
 
 void learn_setDutyCycle(uint8_t duty_cycle) {
   statechart_learn_set_duty_cycle(fsm, duty_cycle);
@@ -46,15 +46,40 @@ void learn_updateHeatRampDuty() {
 }
 
 void learn_updateHeatConstDuty() {
-  int32_t temp = (int32_t)statechart_get_temperature(fsm);
+  int16_t temp = statechart_get_temperature_int(fsm);
   uint16_t t_overtemp = statechart_learn_get_t_overtemp(fsm);
   uint16_t t_now = statechart_learn_get_current_state_time(fsm);
+  uint8_t duty = statechart_learn_get_duty_cycle(fsm);
+  uint16_t duty_delay = statechart_learn_get_duty_delay(fsm);
+  
   if (temp > LEARN_SOAKING_TEMP) {
     actuators_switchHeating(false);
     // update duty cycle only after a certain guard time
     if (t_now - t_overtemp > LEARN_CONST_DUTY_GUARD_TIME_SECS) {
       statechart_learn_set_t_overtemp(fsm, t_now);
-      // TODO: complete the code
+
+      // decrease duty cycle since we are too hot ;-)
+      if (duty > 0) {
+        duty--;
+        learn_setDutyCycle(duty);
+      }
+      statechart_learn_set_duty_delay(fsm, 0);
+    }
+  } else {
+    actuators_switchHeating(true);
+    if (LEARN_SOAKING_TEMP - temp > 1) {
+      duty_delay++;
+    }
+    if (LEARN_SOAKING_TEMP - temp > 5) {
+      duty_delay++;
+    }
+    statechart_learn_set_duty_delay(fsm, duty_delay);
+    if (duty_delay > 30) {
+      statechart_learn_set_duty_delay(fsm, 0);
+      if (duty < 100) {
+        duty++;
+        learn_setDutyCycle(duty);
+      }
     }
   }
 }
